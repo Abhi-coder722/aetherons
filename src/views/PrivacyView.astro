@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Placeholder from '../components/Placeholder.astro';
+import LegalDraftNotice from '../components/LegalDraftNotice.astro';
+import { site } from '../content/site';
+import { hasBookingUrl } from '../lib/env';
+import { getMessages } from '../i18n';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const p = t.legal.privacy;
+const P = site.privacy;
+const L = site.legal;
+
+// Absätze können {{name}}-Platzhalter enthalten, die aus den zentralen Angaben gefüllt werden.
+const values: Record<string, string> = {
+  hostingProvider: P.hostingProvider,
+  hostingLocation: P.hostingLocation,
+  formProcessor: P.formProcessor,
+  bookingTransfer: P.bookingTransfer,
+};
+const parts = (text: string) => text.split(/(\{\{\w+\}\})/).filter(Boolean);
+
+// Die Terminbuchungs-Abschnitt erscheint nur, wenn ein Calendly-Link konfiguriert ist.
+const tokenKey = (part: string): string | null => part.match(/^\{\{(\w+)\}\}$/)?.[1] ?? null;
+const sections = [...p.sections];
+if (hasBookingUrl) sections.splice(3, 0, p.booking);
+---
+
+<BaseLayout locale={locale} routeKey="privacy" title={p.seo.title} description={p.seo.description}>
+  <PageHero eyebrow={p.eyebrow} title={p.h1} />
+
+  <section class="section">
+    <div class="container prose">
+      <LegalDraftNotice locale={locale} />
+      <p>
+        {p.updated}: <Placeholder value={P.lastUpdated} locale={locale} />
+      </p>
+
+      {sections.map((section) => (
+        <>
+          <h2 id={section.id}>{section.title}</h2>
+          {section.paragraphs.map((paragraph) =>
+            paragraph === '{{controller}}' ? (
+              <p>
+                <Placeholder value={L.ownerOrCompany} locale={locale} />
+                <br />
+                <Placeholder value={L.street} locale={locale} />,{' '}
+                <Placeholder value={L.postalCodeCity} locale={locale} />
+                <br />
+                <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
+              </p>
+            ) : (
+              <p>
+                {parts(paragraph).map((part) => {
+                  const key = tokenKey(part);
+                  return key ? <Placeholder value={values[key] ?? ''} locale={locale} /> : part;
+                })}
+              </p>
+            ),
+          )}
+        </>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,94 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Placeholder from '../components/Placeholder.astro';
+import LegalDraftNotice from '../components/LegalDraftNotice.astro';
+import { site } from '../content/site';
+import { getMessages } from '../i18n';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const i = t.legal.imprint;
+const L = site.legal;
+// Zeilen, die leer ('') sind, werden nicht ausgegeben; Platzhalter erscheinen markiert.
+const show = (value: string) => value !== '';
+---
+
+<BaseLayout locale={locale} routeKey="legal" title={i.seo.title} description={i.seo.description}>
+  <PageHero eyebrow={i.eyebrow} title={i.h1} />
+
+  <section class="section">
+    <div class="container prose">
+      <LegalDraftNotice locale={locale} />
+      <p>{i.intro}</p>
+
+      <h2>{i.labels.owner}</h2>
+      <p>
+        <Placeholder value={L.ownerOrCompany} locale={locale} />
+      </p>
+
+      {show(L.representative) && (
+        <>
+          <h2>{i.labels.representative}</h2>
+          <p>
+            <Placeholder value={L.representative} locale={locale} />
+          </p>
+        </>
+      )}
+
+      <h2>{i.labels.address}</h2>
+      <p>
+        <Placeholder value={L.street} locale={locale} />
+        <br />
+        <Placeholder value={L.postalCodeCity} locale={locale} />
+        <br />
+        {L.country[locale]}
+      </p>
+
+      <h2>{i.labels.contact}</h2>
+      <p>
+        {i.labels.email}: <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
+        {site.contact.phone && (
+          <>
+            <br />
+            {i.labels.phone}: {site.contact.phone}
+          </>
+        )}
+      </p>
+
+      {show(L.vatId) && (
+        <>
+          <h2>{i.labels.vatId}</h2>
+          <p>
+            <Placeholder value={L.vatId} locale={locale} />
+          </p>
+        </>
+      )}
+
+      {show(L.register) && (
+        <>
+          <h2>{i.labels.register}</h2>
+          <p>
+            <Placeholder value={L.register} locale={locale} />
+          </p>
+        </>
+      )}
+
+      {show(L.contentResponsible) && (
+        <>
+          <h2>{i.labels.content}</h2>
+          <p>
+            <Placeholder value={L.contentResponsible} locale={locale} />
+          </p>
+        </>
+      )}
+
+      <h2>{i.labels.dispute}</h2>
+      <p>{i.dispute}</p>
+    </div>
+  </section>
+</BaseLayout>

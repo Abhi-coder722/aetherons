@@ -1,0 +1,4 @@
+# Netlify / Cloudflare Pages: frühere Adressen dauerhaft umleiten (v2 ohne Sprachen).
+/leistungen/ / 301
+/leistungen/websites/ /webentwicklung/ 301
+/leistungen/daten-und-automatisierung/ /daten-digitalisierung/ 301

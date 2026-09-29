@@ -1,0 +1,486 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import CtaBand from '../components/CtaBand.astro';
+import FaqList from '../components/FaqList.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getMessages, routePath } from '../i18n';
+import type { Locale, ServiceKey } from '../i18n';
+import { breadcrumbSchema, serviceSchema } from '../lib/seo';
+
+interface Props {
+  locale: Locale;
+  serviceKey: ServiceKey;
+}
+const { locale, serviceKey } = Astro.props;
+const t = getMessages(locale);
+const s = t.services[serviceKey];
+const ui = t.ui.service;
+const siteUrl = new URL('/', Astro.site).toString();
+const url = new URL(routePath(serviceKey, locale), Astro.site).toString();
+const contactHref = `${routePath('contact', locale)}?topic=${s.topic}`;
+const firstBlock = s.blocks[0]?.id;
+---
+
+<BaseLayout
+  locale={locale}
+  routeKey={serviceKey}
+  title={s.seo.title}
+  description={s.seo.description}
+  schema={[
+    serviceSchema(siteUrl, { name: s.name, description: s.seo.description, url, locale }),
+    breadcrumbSchema([
+      { name: t.ui.home, url: siteUrl.replace(/\/$/, '') + routePath('home', locale) },
+      { name: s.name, url },
+    ]),
+  ]}
+>
+  <PageHero eyebrow={s.eyebrow} title={s.h1} lead={s.lead}>
+    <Breadcrumbs
+      slot="before"
+      label={t.ui.breadcrumbs}
+      items={[
+        { name: t.ui.home, href: routePath('home', locale) },
+        { name: s.name, href: routePath(serviceKey, locale) },
+      ]}
+    />
+    <div class="button-row">
+      <a class="button button--primary" href={contactHref}>
+        {t.ui.cta.discuss}{' '}
+        <span class="arrow" aria-hidden="true">
+          →
+        </span>
+      </a>
+      {firstBlock && (
+        <a class="button button--secondary" href={`#${firstBlock}`}>
+          {s.secondaryCta}
+        </a>
+      )}
+    </div>
+  </PageHero>
+
+  {s.notice && (
+    <section class="notice-strip" aria-label={s.notice.title}>
+      <div class="container">
+        <div class="notice" role="note">
+          <p class="notice-title">{s.notice.title}</p>
+          <p>{s.notice.text}</p>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section" aria-labelledby="situations-title">
+    <div class="container two-col">
+      <div class="section-head">
+        <p class="eyebrow">{ui.situationsEyebrow}</p>
+        <h2 id="situations-title">{ui.situationsTitle}</h2>
+      </div>
+      <ul class="check-list situations">
+        {s.situations.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  {s.blocks.map((block, index) => {
+    const tint = index % 2 === 0;
+    return (
+      <section
+        class:list={['section', { 'section--tint': tint }]}
+        id={block.id}
+        aria-labelledby={`${block.id}-title`}
+      >
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">{block.eyebrow}</p>
+            <h2 id={`${block.id}-title`}>{block.title}</h2>
+            {'intro' in block && block.intro && <p>{block.intro}</p>}
+          </div>
+
+          {block.kind === 'cards' && (
+            <ul class="modules" role="list">
+              {block.items.map((item, i) => (
+                <li class="module">
+                  <span class="module-number" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {block.kind === 'steps' && (
+            <ol class="phases" style={`--n:${block.items.length}`}>
+              {block.items.map((item, i) => (
+                <li class="phase">
+                  <span class="module-number" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          {block.kind === 'list' && (
+            <ul class="check-list check-list--wide">
+              {block.items.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          )}
+
+          {block.kind === 'split' && (
+            <div class="split">
+              <div class="card stack">
+                <h3>{block.left.title}</h3>
+                <ul class="check-list">
+                  {block.left.items.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div class="card stack">
+                <h3>{block.right.title}</h3>
+                <ul class="check-list check-list--mint">
+                  {block.right.items.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {block.kind === 'callout' && (
+            <div class="callout" role="note">
+              <p class="callout-title">{block.title}</p>
+              <p>{block.text}</p>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  })}
+
+  {s.scenario && (
+    <section class="section" aria-labelledby="scenario-title">
+      <div class="container two-col">
+        <div class="section-head">
+          <p class="eyebrow">{ui.scenarioEyebrow}</p>
+          <h2 id="scenario-title">{s.scenario.title}</h2>
+          <p class="scenario-note">{ui.scenarioNote}</p>
+        </div>
+        <dl class="scenario card">
+          <div>
+            <dt>{ui.before}</dt>
+            <dd>{s.scenario.before}</dd>
+          </div>
+          <div>
+            <dt>{ui.goal}</dt>
+            <dd>{s.scenario.goal}</dd>
+          </div>
+          <div>
+            <dt>{ui.approach}</dt>
+            <dd>{s.scenario.approach}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  )}
+
+  <section class="section section--tint" aria-labelledby="deliverables-title">
+    <div class="container two-col">
+      <div class="section-head">
+        <p class="eyebrow">{ui.deliverablesEyebrow}</p>
+        <h2 id="deliverables-title">{ui.deliverablesTitle}</h2>
+        <p>{ui.deliverablesIntro}</p>
+      </div>
+      <ul class="check-list check-list--mint deliverables">
+        {s.deliverables.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="service-faq-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">{ui.faqEyebrow}</p>
+        <h2 id="service-faq-title">{ui.faqTitle}</h2>
+      </div>
+      <FaqList items={s.faq} />
+      <p class="more-faq">
+        <a href={routePath('faq', locale)}>{ui.moreFaq}</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--tint" aria-labelledby="related-title">
+    <div class="container">
+      <h2 id="related-title" class="related-heading">
+        {ui.relatedTitle}
+      </h2>
+      <ul class="related" role="list">
+        {s.related.map((key) => (
+          <li>
+            <a class="related-link" href={routePath(key, locale)}>
+              <span class="related-name">{t.nav[key as keyof typeof t.nav]}</span>
+              <span class="related-text">
+                {key in t.services ? t.services[key as ServiceKey].summary : ''}
+              </span>
+            </a>
+          </li>
+        ))}
+        <li>
+          <a class="related-link" href={routePath('process', locale)}>
+            <span class="related-name">{t.nav.process}</span>
+            <span class="related-text">{t.process.lead}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} headline={s.ctaHeadline} topic={s.topic} />
+</BaseLayout>
+
+<style>
+  .two-col {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 56em) {
+    .two-col {
+      grid-template-columns: 1fr 1.2fr;
+      gap: var(--space-8);
+      align-items: start;
+    }
+    .two-col .section-head {
+      margin-bottom: 0;
+    }
+  }
+
+  .notice-strip {
+    padding-block: var(--space-6) 0;
+  }
+
+  .notice,
+  .callout {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-line-strong);
+    border-left: 6px solid var(--color-primary);
+    background: var(--color-surface);
+  }
+
+  .notice-title,
+  .callout-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-lg);
+  }
+
+  .callout {
+    max-width: 52rem;
+    border-left-color: var(--color-mint);
+    background: var(--color-night);
+    color: var(--color-on-night);
+    border-color: var(--color-night);
+  }
+
+  .callout p:not(.callout-title) {
+    color: var(--color-on-night-soft);
+  }
+
+  .situations li,
+  .deliverables li {
+    font-size: var(--text-lg);
+  }
+
+  .check-list--wide {
+    max-width: 52rem;
+  }
+
+  .check-list--wide li {
+    font-size: var(--text-lg);
+  }
+
+  .modules {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 48em) {
+    .modules {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 72em) {
+    .modules {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .module {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    padding: var(--space-5);
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+  }
+
+  .section--tint .module {
+    background: var(--color-paper);
+  }
+
+  .module-number {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-ink-muted);
+  }
+
+  .module h3,
+  .phase h3 {
+    font-size: var(--text-lg);
+  }
+
+  .module p,
+  .phase p {
+    color: var(--color-ink-soft);
+  }
+
+  .phases {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 48em) {
+    .phases {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .phases {
+      grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr));
+    }
+  }
+
+  .phase {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    padding: var(--space-5) var(--space-4) var(--space-5) 0;
+    border-top: 3px solid var(--color-primary);
+  }
+
+  .phase:last-child {
+    border-top-color: var(--color-mint);
+  }
+
+  .split {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 48em) {
+    .split {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .split h3 {
+    font-size: var(--text-lg);
+  }
+
+  .scenario-note {
+    font-size: var(--text-sm) !important;
+    font-style: italic;
+  }
+
+  .scenario {
+    display: grid;
+    gap: var(--space-5);
+    border-left: 6px solid var(--color-primary);
+  }
+
+  dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    margin-bottom: var(--space-1);
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .more-faq {
+    margin-top: var(--space-5);
+    color: var(--color-ink-soft);
+  }
+
+  .related-heading {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-5);
+  }
+
+  .related {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 48em) {
+    .related {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .related-link {
+    display: grid;
+    gap: var(--space-2);
+    height: 100%;
+    padding: var(--space-5);
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--color-ink);
+  }
+
+  .related-link:hover {
+    border-color: var(--color-primary);
+  }
+
+  .related-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-lg);
+    color: var(--color-link);
+  }
+
+  .related-text {
+    color: var(--color-ink-soft);
+  }
+</style>

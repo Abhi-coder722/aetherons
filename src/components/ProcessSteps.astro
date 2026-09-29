@@ -1,0 +1,85 @@
+---
+import type { Card } from '../i18n';
+
+interface Props {
+  steps: Card[];
+  headingLevel?: 'h3' | 'h4';
+}
+const { steps, headingLevel: Heading = 'h3' } = Astro.props;
+---
+
+<ol class="process" style={`--steps:${steps.length}`}>
+  {steps.map((step, index) => (
+    <li class="process-step">
+      <span class="process-number" aria-hidden="true">
+        {String(index + 1).padStart(2, '0')}
+      </span>
+      <Heading class="process-title">{step.title}</Heading>
+      <p>{step.text}</p>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .process {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-5);
+    counter-reset: step;
+  }
+
+  @media (min-width: 48em) {
+    .process {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .process {
+      grid-template-columns: repeat(var(--steps, 4), minmax(0, 1fr));
+      gap: 0;
+    }
+  }
+
+  .process-step {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-5) var(--space-5) 0;
+    border-top: 3px solid var(--color-primary);
+  }
+
+  .process-step:last-child {
+    border-top-color: var(--color-mint);
+  }
+
+  @media (min-width: 64em) {
+    .process-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: -7.5px;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      background: var(--color-paper);
+      border: 3px solid var(--color-primary);
+      border-radius: 50%;
+    }
+  }
+
+  .process-number {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-ink-muted);
+  }
+
+  .process-title {
+    font-size: var(--text-lg);
+  }
+
+  .process-step p {
+    color: var(--color-ink-soft);
+  }
+</style>

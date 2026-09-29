@@ -1,0 +1,23 @@
+---
+/** Zeigt eine fehlende Angabe sichtbar markiert an (Beschriftung in der jeweiligen Sprache). */
+import { isPlaceholder, placeholderKey } from '../content/site';
+import { getMessages } from '../i18n';
+import type { Locale } from '../i18n';
+
+interface Props {
+  value: string;
+  locale: Locale;
+}
+const { value, locale } = Astro.props;
+const t = getMessages(locale);
+const missing = isPlaceholder(value);
+const label = missing
+  ? (t.placeholders[placeholderKey(value ?? '')] ?? placeholderKey(value ?? ''))
+  : '';
+---
+
+{missing ? (
+  <span class="placeholder">{`[${t.ui.placeholderPrefix}: ${label}]`}</span>
+) : (
+  <>{value}</>
+)}

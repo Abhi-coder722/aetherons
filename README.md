@@ -96,3 +96,4 @@ Siehe `LAUNCH-CHECKLIST.md`. Kurz: (1) `.env` bzw. Hosting-Variablen setzen, (2)
 (3) `npm run check:launch` muss grün sein, (4) `dist/` statisch hosten **oder** `npm run serve` hinter TLS-Proxy betreiben,
 (5) manuelle Abnahme (Checkliste), (6) Search Console: `sitemap.xml` einreichen.
 # aetherons
+# aetherons

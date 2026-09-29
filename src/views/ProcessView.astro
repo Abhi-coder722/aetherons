@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import ProcessSteps from '../components/ProcessSteps.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { getMessages } from '../i18n';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const p = t.process;
+---
+
+<BaseLayout locale={locale} routeKey="process" title={p.seo.title} description={p.seo.description}>
+  <PageHero eyebrow={p.eyebrow} title={p.h1} lead={p.lead} />
+
+  <section class="section" aria-labelledby="process-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">{p.stepsEyebrow}</p>
+        <h2 id="process-title">{p.stepsTitle}</h2>
+      </div>
+      <ProcessSteps steps={p.steps} />
+    </div>
+  </section>
+
+  <section class="section section--tint" aria-labelledby="gates-title">
+    <div class="container prose">
+      <h2 id="gates-title">{p.gatesTitle}</h2>
+      <p class="lead">{p.gatesText}</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="principles-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">{p.principlesEyebrow}</p>
+        <h2 id="principles-title">{p.principlesTitle}</h2>
+      </div>
+      <ul class="grid grid--4 principle-cards" role="list">
+        {t.home.principles.items.map((item) => (
+          <li class="card stack">
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--tint" aria-labelledby="needs-title">
+    <div class="container columns">
+      <div class="stack">
+        <h2 id="needs-title">{p.needsTitle}</h2>
+        <ul class="check-list">
+          {p.needs.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </div>
+      <div class="stack">
+        <h2 id="not-title">{p.notDoingTitle}</h2>
+        <ul class="check-list not-list">
+          {p.notDoing.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .principle-cards {
+    list-style: none;
+    padding: 0;
+  }
+
+  .principle-cards h3 {
+    font-size: var(--text-lg);
+  }
+
+  .principle-cards p {
+    color: var(--color-ink-soft);
+  }
+
+  .columns {
+    display: grid;
+    gap: var(--space-7);
+    --stack: var(--space-5);
+  }
+
+  @media (min-width: 56em) {
+    .columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .not-list li::before {
+    background: transparent;
+    border: 2px solid var(--color-ink-muted);
+  }
+</style>

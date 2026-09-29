@@ -1,0 +1,94 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import CtaBand from '../components/CtaBand.astro';
+import Placeholder from '../components/Placeholder.astro';
+import { ph, site } from '../content/site';
+import { getMessages, routePath } from '../i18n';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const a = t.about;
+const aboutText = site.about.text[locale];
+---
+
+<BaseLayout locale={locale} routeKey="about" title={a.seo.title} description={a.seo.description}>
+  <PageHero eyebrow={a.eyebrow} title={a.h1} lead={a.lead} />
+
+  <section class="section" aria-labelledby="fit-title">
+    <div class="container columns">
+      <div class="card stack">
+        <h2 id="fit-title">{a.forTitle}</h2>
+        <ul class="check-list check-list--mint">
+          {a.forItems.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </div>
+      <div class="card stack">
+        <h2>{a.notForTitle}</h2>
+        <ul class="check-list not-list">
+          {a.notForItems.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tint" aria-labelledby="lang-title">
+    <div class="container prose">
+      <h2 id="lang-title">{a.langTitle}</h2>
+      <p class="lead">{a.langText}</p>
+      <p>
+        <a href={routePath('legal', locale)}>{t.nav.legal}</a> ·
+        <a href={routePath('privacy', locale)}>{t.nav.privacy}</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="team-title">
+    <div class="container prose">
+      <h2 id="team-title">{a.teamTitle}</h2>
+      {aboutText ? (
+        <p class="lead">{aboutText}</p>
+      ) : (
+        <div class="placeholder-box">
+          <p>
+            <Placeholder value={ph('aboutText')} locale={locale} />
+          </p>
+        </div>
+      )}
+      <h3>{a.factsTitle}</h3>
+      <p>{a.factsText}</p>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .columns {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 56em) {
+    .columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .card h2 {
+    font-size: var(--text-xl);
+  }
+
+  .not-list li::before {
+    background: transparent;
+    border: 2px solid var(--color-ink-muted);
+  }
+</style>

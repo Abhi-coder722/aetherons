@@ -1,0 +1,436 @@
+---
+import LogoMark from './LogoMark.astro';
+import { getMessages, routePath, localeMeta, locales, serviceKeys } from '../i18n';
+import type { Locale, RouteKey } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  routeKey: RouteKey;
+}
+const { locale, routeKey } = Astro.props;
+const t = getMessages(locale);
+
+const isServicePage = (serviceKeys as readonly string[]).includes(routeKey);
+const topLinks: Exclude<RouteKey, 'home'>[] = ['process', 'about', 'faq'];
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href={routePath('home', locale)} aria-label={t.ui.brandHome}>
+      <LogoMark class="brand-mark" compact />
+      <span class="brand-name" aria-hidden="true">
+        aetheron
+      </span>
+    </a>
+
+    <button
+      class="menu-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      data-menu-toggle
+      data-open-label={t.ui.closeMenu}
+      data-closed-label={t.ui.menu}
+    >
+      <span class="menu-icon" aria-hidden="true"></span>
+      <span data-menu-label>{t.ui.menu}</span>
+    </button>
+
+    <div id="site-nav" class="site-nav" data-menu>
+      <nav aria-label={t.ui.mainNav}>
+        <ul class="nav-list">
+          <li class="has-sub">
+            <button
+              class="sub-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="services-menu"
+              data-sub-toggle
+              aria-current={isServicePage ? 'true' : undefined}
+            >
+              {t.ui.footer.services}
+              <span class="chevron" aria-hidden="true"></span>
+            </button>
+            <ul id="services-menu" class="sub-list" data-sub-list>
+              {serviceKeys.map((key) => (
+                <li>
+                  <a
+                    href={routePath(key, locale)}
+                    aria-current={routeKey === key ? 'page' : undefined}
+                  >
+                    {t.nav[key]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </li>
+          {topLinks.map((key) => (
+            <li>
+              <a href={routePath(key, locale)} aria-current={routeKey === key ? 'page' : undefined}>
+                {t.nav[key]}
+              </a>
+            </li>
+          ))}
+          <li class="nav-cta">
+            <a
+              class="button button--primary"
+              href={routePath('contact', locale)}
+              aria-current={routeKey === 'contact' ? 'page' : undefined}
+            >
+              {t.ui.cta.discuss}
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <nav class="lang-switch" aria-label={t.ui.langNav}>
+        <ul>
+          {locales.map((l) => (
+            <li>
+              <a
+                href={routePath(routeKey, l)}
+                lang={localeMeta[l].htmlLang}
+                hreflang={localeMeta[l].htmlLang}
+                aria-current={l === locale ? 'true' : undefined}
+                aria-label={
+                  l === locale
+                    ? `${localeMeta[l].label} (${t.ui.langCurrent})`
+                    : localeMeta[l].label
+                }
+                data-lang={l}
+              >
+                {localeMeta[l].short}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+  const label = document.querySelector<HTMLElement>('[data-menu-label]');
+  const sub = document.querySelector<HTMLButtonElement>('[data-sub-toggle]');
+
+  if (toggle && menu && label) {
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      label.textContent = open ? toggle.dataset.openLabel! : toggle.dataset.closedLabel!;
+      menu.classList.toggle('is-open', open);
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    menu.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('a')) setOpen(false);
+    });
+
+    window.matchMedia('(min-width: 64em)').addEventListener('change', () => setOpen(false));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (sub?.getAttribute('aria-expanded') === 'true') {
+        sub.setAttribute('aria-expanded', 'false');
+        sub.focus();
+      } else if (toggle.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  }
+
+  if (sub) {
+    sub.addEventListener('click', () => {
+      sub.setAttribute('aria-expanded', String(sub.getAttribute('aria-expanded') !== 'true'));
+    });
+    document.addEventListener('click', (event) => {
+      if (!(event.target as HTMLElement).closest('.has-sub')) {
+        sub.setAttribute('aria-expanded', 'false');
+      }
+    });
+    // Beim Tastatur-Fokus außerhalb des Untermenüs schließen.
+    document.addEventListener('focusin', (event) => {
+      if (!(event.target as HTMLElement).closest('.has-sub')) {
+        sub.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgb(247 247 244 / 0.94);
+    backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 4.25rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--color-ink);
+    text-decoration: none;
+    padding-block: var(--space-2);
+  }
+
+  .brand :global(.brand-mark) {
+    width: 2.1rem;
+    height: auto;
+  }
+
+  .brand-name {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .menu-toggle {
+    display: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: 600 0.9375rem/1 var(--font-body);
+    cursor: pointer;
+  }
+
+  .menu-icon,
+  .menu-icon::before {
+    display: block;
+    width: 1rem;
+    height: 2px;
+    background: currentColor;
+    position: relative;
+    transition: transform 0.2s var(--ease);
+  }
+
+  .menu-icon::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+  }
+
+  .menu-icon {
+    transform: translateY(-2.5px);
+  }
+
+  [aria-expanded='true'] > .menu-icon {
+    transform: translateY(0) rotate(45deg);
+  }
+
+  [aria-expanded='true'] > .menu-icon::before {
+    top: 0;
+    transform: rotate(-90deg);
+  }
+
+  .site-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .nav-list,
+  .lang-switch ul,
+  .sub-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .nav-list {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .nav-list a:not(.button),
+  .sub-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding-inline: 0.7rem;
+    color: var(--color-ink);
+    font: 500 1rem/1.2 var(--font-body);
+    text-decoration: none;
+    border: 0;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .nav-list a:not(.button):hover,
+  .sub-toggle:hover {
+    background: var(--color-tint);
+  }
+
+  .nav-list a[aria-current='page']:not(.button),
+  .sub-toggle[aria-current='true'] {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.45em;
+    text-decoration-color: var(--color-primary);
+  }
+
+  .chevron {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.2s var(--ease);
+  }
+
+  [aria-expanded='true'] > .chevron {
+    transform: translateY(1px) rotate(225deg);
+  }
+
+  .has-sub {
+    position: relative;
+  }
+
+  .sub-list {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    min-width: 17rem;
+    padding: var(--space-2);
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: none;
+  }
+
+  [aria-expanded='true'] + .sub-list {
+    display: block;
+  }
+
+  .sub-list a:not(.button) {
+    display: flex;
+    width: 100%;
+    padding-block: 0.4rem;
+  }
+
+  .nav-cta {
+    margin-left: var(--space-2);
+  }
+
+  .nav-cta .button {
+    min-height: 2.75rem;
+    padding-block: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .lang-switch ul {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+  }
+
+  .lang-switch a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    border-radius: 6px;
+    color: var(--color-ink);
+    font: 600 0.8125rem/1 var(--font-mono);
+    text-decoration: none;
+  }
+
+  .lang-switch a:hover {
+    background: var(--color-tint);
+  }
+
+  .lang-switch a[aria-current='true'] {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  /* Mobile Navigation: nur mit JavaScript eingeklappt. */
+  @media (max-width: 63.99em) {
+    :global(html.js) .menu-toggle {
+      display: inline-flex;
+    }
+
+    .header-inner {
+      flex-wrap: wrap;
+    }
+
+    .site-nav {
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      padding-bottom: var(--space-4);
+    }
+
+    :global(html.js) .site-nav:not(.is-open) {
+      display: none;
+    }
+
+    .nav-list {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-1);
+    }
+
+    .nav-list a:not(.button),
+    .sub-toggle {
+      width: 100%;
+      font-size: 1.0625rem;
+    }
+
+    .sub-toggle {
+      justify-content: space-between;
+    }
+
+    .sub-list {
+      position: static;
+      min-width: 0;
+      box-shadow: none;
+      border: 0;
+      border-left: 2px solid var(--color-line);
+      border-radius: 0;
+      margin-left: var(--space-3);
+      background: transparent;
+    }
+
+    .nav-cta {
+      margin: var(--space-3) 0 0;
+    }
+
+    .nav-cta .button {
+      width: 100%;
+    }
+
+    .lang-switch ul {
+      width: fit-content;
+    }
+  }
+</style>

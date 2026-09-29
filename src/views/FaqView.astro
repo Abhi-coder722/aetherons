@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import FaqList from '../components/FaqList.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { getMessages } from '../i18n';
+import type { Locale } from '../i18n';
+import { faqSchema } from '../lib/seo';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const f = t.faq;
+const all = f.groups.flatMap((g) => g.items);
+---
+
+<BaseLayout
+  locale={locale}
+  routeKey="faq"
+  title={f.seo.title}
+  description={f.seo.description}
+  schema={[faqSchema(all)]}
+>
+  <PageHero eyebrow={f.eyebrow} title={f.h1} lead={f.lead} />
+
+  {f.groups.map((group, index) => (
+    <section
+      class:list={['section', { 'section--tint': index % 2 === 1 }]}
+      id={group.id}
+      aria-labelledby={`${group.id}-title`}
+    >
+      <div class="container">
+        <div class="section-head">
+          <h2 id={`${group.id}-title`}>{group.title}</h2>
+        </div>
+        <FaqList items={group.items} />
+      </div>
+    </section>
+  ))}
+
+  <CtaBand locale={locale} />
+</BaseLayout>

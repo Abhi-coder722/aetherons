@@ -1,0 +1,165 @@
+---
+import LogoMark from './LogoMark.astro';
+import { site } from '../content/site';
+import { getMessages, routePath, serviceKeys } from '../i18n';
+import type { Locale, RouteKey } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const year = new Date().getFullYear();
+const company: Exclude<RouteKey, 'home'>[] = ['process', 'about', 'faq', 'contact'];
+---
+
+<footer class="site-footer on-night">
+  <div class="container footer-grid">
+    <div class="footer-brand stack">
+      <a class="footer-logo" href={routePath('home', locale)} aria-label={t.ui.brandHome}>
+        <LogoMark class="footer-mark" />
+        <span aria-hidden="true">aetheron</span>
+      </a>
+      <p>{t.ui.footer.tagline}.</p>
+      <p>
+        <a class="button button--primary" href={routePath('contact', locale)}>
+          {t.ui.cta.discuss}
+        </a>
+      </p>
+    </div>
+
+    <nav aria-label={t.ui.footer.services}>
+      <h2 class="footer-heading">{t.ui.footer.services}</h2>
+      <ul>
+        {serviceKeys.map((key) => (
+          <li>
+            <a href={routePath(key, locale)}>{t.nav[key]}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <nav aria-label={t.ui.footer.company}>
+      <h2 class="footer-heading">{t.ui.footer.company}</h2>
+      <ul>
+        {company.map((key) => (
+          <li>
+            <a href={routePath(key, locale)}>{t.nav[key]}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <div>
+      <h2 class="footer-heading">{t.ui.footer.contact}</h2>
+      <ul>
+        <li>
+          <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
+        </li>
+        {site.contact.phone && (
+          <li>
+            <a href={`tel:${site.contact.phone.replace(/[^+\d]/g, '')}`}>{site.contact.phone}</a>
+          </li>
+        )}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <p>
+      {t.ui.footer.rights} {year} {site.name}
+    </p>
+    <ul class="legal-links">
+      <li>
+        <a href={routePath('legal', locale)}>{t.nav.legal}</a>
+      </li>
+      <li>
+        <a href={routePath('privacy', locale)}>{t.nav.privacy}</a>
+      </li>
+    </ul>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    padding-top: var(--space-8);
+    font-size: var(--text-sm);
+  }
+
+  .footer-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 48em) {
+    .footer-grid {
+      grid-template-columns: 1.6fr repeat(3, 1fr);
+    }
+  }
+
+  .footer-logo {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .footer-logo :global(.footer-mark) {
+    width: 7rem;
+    height: auto;
+  }
+
+  .footer-brand p {
+    color: var(--color-on-night-soft);
+    max-width: 22rem;
+  }
+
+  .footer-heading {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-on-night-soft);
+    margin-bottom: var(--space-3);
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  li a:not(.button) {
+    display: inline-block;
+    padding-block: 0.3rem;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  li a:not(.button):hover {
+    text-decoration: underline;
+  }
+
+  .footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: var(--space-8);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-night-line);
+    color: var(--color-on-night-soft);
+  }
+
+  .legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+  }
+</style>

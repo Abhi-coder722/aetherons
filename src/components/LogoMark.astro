@@ -1,0 +1,29 @@
+---
+/**
+ * Bildmarke von aetheron, nachgezeichnet nach dem gelieferten Logo
+ * (blaues „e“ mit mintgrünem Abschluss). Rein dekorativ – der Markenname steht als Text daneben.
+ */
+interface Props {
+  class?: string;
+  compact?: boolean;
+}
+const { class: className, compact = false } = Astro.props;
+---
+
+{compact ? (
+  <svg class={className} viewBox="0 0 220 168" aria-hidden="true" focusable="false">
+    <path
+      fill="var(--logo-blue, #4D6EFF)"
+      d="M0 30Q0 0 30 0H190Q220 0 220 30V102H80V72H168V48H52V120H176V168H30Q0 168 0 138Z"
+    />
+    <rect x="176" y="120" width="44" height="48" fill="var(--logo-mint, #5CF5C0)" />
+  </svg>
+) : (
+  <svg class={className} viewBox="0 0 340 168" aria-hidden="true" focusable="false">
+    <path
+      fill="var(--logo-blue, #4D6EFF)"
+      d="M0 30Q0 0 30 0H190Q220 0 220 30V102H80V72H168V48H52V120H300V168H30Q0 168 0 138Z"
+    />
+    <rect x="300" y="120" width="40" height="48" fill="var(--logo-mint, #5CF5C0)" />
+  </svg>
+)}

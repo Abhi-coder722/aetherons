@@ -1,0 +1,72 @@
+---
+import { site } from '../content/site';
+import { getMessages, routePath } from '../i18n';
+import type { Locale, TopicKey } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  headline?: string;
+  text?: string;
+  topic?: TopicKey;
+}
+const { locale, topic } = Astro.props;
+const t = getMessages(locale);
+const headline = Astro.props.headline ?? t.home.cta.headline;
+const text = Astro.props.text ?? t.home.cta.text;
+const href = routePath('contact', locale) + (topic ? `?topic=${topic}` : '');
+---
+
+<section class="cta-band on-night" aria-labelledby="cta-heading">
+  <div class="container cta-inner">
+    <div class="stack">
+      <h2 id="cta-heading">{headline}</h2>
+      <p class="lead">{text}</p>
+    </div>
+    <div class="cta-actions">
+      <a class="button button--primary" href={href}>
+        {t.ui.cta.discuss}{' '}
+        <span class="arrow" aria-hidden="true">
+          →
+        </span>
+      </a>
+      <p class="cta-mail">
+        {t.ui.cta.emailInstead} <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta-band {
+    padding-block: var(--section-space);
+    border-bottom: 1px solid var(--color-night-line);
+  }
+
+  .cta-inner {
+    display: grid;
+    gap: var(--space-6);
+    align-items: end;
+  }
+
+  @media (min-width: 56em) {
+    .cta-inner {
+      grid-template-columns: 1.4fr 1fr;
+    }
+  }
+
+  .cta-inner h2 {
+    max-width: 20ch;
+  }
+
+  .cta-actions {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+
+  .cta-mail {
+    color: var(--color-on-night-soft);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+  }
+</style>

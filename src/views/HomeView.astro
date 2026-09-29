@@ -1,0 +1,380 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroVisual from '../components/HeroVisual.astro';
+import ProcessSteps from '../components/ProcessSteps.astro';
+import FaqList from '../components/FaqList.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { site } from '../content/site';
+import { getMessages, routePath, serviceKeys } from '../i18n';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const h = t.home;
+---
+
+<BaseLayout
+  locale={locale}
+  routeKey="home"
+  title={h.seo.title}
+  standaloneTitle
+  description={h.seo.description}
+>
+  <section class="hero on-night" aria-labelledby="hero-title">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">{h.hero.eyebrow}</p>
+        <h1 id="hero-title">
+          {h.hero.h1} <span class="accent">{h.hero.h1Accent}</span>
+        </h1>
+        <p class="lead">{h.hero.lead}</p>
+        <div class="button-row">
+          <a class="button button--primary" href={routePath('contact', locale)}>
+            {t.ui.cta.discuss}{' '}
+            <span class="arrow" aria-hidden="true">
+              →
+            </span>
+          </a>
+          <a class="button button--secondary" href="#leistungen">
+            {h.hero.secondary}
+          </a>
+        </div>
+      </div>
+      <HeroVisual />
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="audience-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">{h.audience.eyebrow}</p>
+        <h2 id="audience-title">{h.audience.title}</h2>
+        <p>{h.audience.intro}</p>
+      </div>
+      <ul class="grid grid--3 situations" role="list">
+        {h.audience.items.map((item) => (
+          <li class="card situation">
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--tint" id="leistungen" aria-labelledby="services-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">{h.services.eyebrow}</p>
+        <h2 id="services-title">{h.services.title}</h2>
+        <p>{h.services.intro}</p>
+      </div>
+      <div class="grid grid--2">
+        {serviceKeys.map((key, index) => (
+          <article class="service-card">
+            <p class="service-index" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </p>
+            <h3>
+              <a href={routePath(key, locale)} class="service-link">
+                {t.services[key].name}
+              </a>
+            </h3>
+            <p>{t.services[key].summary}</p>
+            <ul class="check-list">
+              {t.services[key].highlights.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+            <span class="service-more" aria-hidden="true">
+              {t.ui.cta.learnMore} <span class="arrow">→</span>
+            </span>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="honesty-title">
+    <div class="container principles-grid">
+      <div class="section-head sticky-head">
+        <p class="eyebrow">{h.honesty.eyebrow}</p>
+        <h2 id="honesty-title">{h.honesty.title}</h2>
+        <p>{h.honesty.text}</p>
+        <p>
+          <a href={routePath('pos', locale)}>{t.nav.pos} →</a>
+        </p>
+      </div>
+      <ul class="principles" role="list">
+        {h.honesty.items.map((item) => (
+          <li>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--tint" aria-labelledby="principles-title">
+    <div class="container principles-grid">
+      <div class="section-head sticky-head">
+        <p class="eyebrow">{h.principles.eyebrow}</p>
+        <h2 id="principles-title">{h.principles.title}</h2>
+        <p>{h.principles.text}</p>
+        <p>
+          <a href={routePath('process', locale)}>{h.principles.link}</a>
+        </p>
+      </div>
+      <ul class="principles" role="list">
+        {h.principles.items.map((item) => (
+          <li>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  {site.references.length > 0 && (
+    <section class="section" aria-labelledby="references-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="references-title">Referenzen</h2>
+        </div>
+        <ul class="grid grid--2" role="list">
+          {site.references.map((ref) => (
+            <li class="card stack">
+              <h3>{ref.title}</h3>
+              <p class="ref-client">{ref.client}</p>
+              <p>{ref.summary[locale]}</p>
+              {ref.url && <a href={ref.url}>{ref.url}</a>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <section class="section" aria-labelledby="process-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">{h.process.eyebrow}</p>
+        <h2 id="process-title">{h.process.title}</h2>
+        <p>{h.process.text}</p>
+      </div>
+      <ProcessSteps steps={t.process.steps} />
+    </div>
+  </section>
+
+  <section class="section section--tint" aria-labelledby="lang-title">
+    <div class="container prose">
+      <p class="eyebrow">{h.languages.eyebrow}</p>
+      <h2 id="lang-title">{h.languages.title}</h2>
+      <p class="lead">{h.languages.text}</p>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">{h.faq.eyebrow}</p>
+        <h2 id="faq-title">{h.faq.title}</h2>
+      </div>
+      <FaqList items={h.faq.items} />
+      <p class="more-faq">
+        <a href={routePath('faq', locale)}>{t.ui.cta.allFaq}</a>
+      </p>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: clamp(3rem, 2rem + 5vw, 6.5rem);
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    display: grid;
+    gap: var(--space-7);
+    align-items: center;
+  }
+
+  @media (min-width: 60em) {
+    .hero-grid {
+      grid-template-columns: 1.15fr 1fr;
+    }
+  }
+
+  .hero-copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.1rem, 1.4rem + 2.8vw, 3.7rem);
+  }
+
+  .accent {
+    color: var(--color-mint);
+  }
+
+  @media (max-width: 59.99em) {
+    .hero :global(.hero-visual) {
+      max-width: 26rem;
+    }
+  }
+
+  .grid--3 {
+    list-style: none;
+    padding: 0;
+  }
+
+  @media (min-width: 48em) {
+    .grid--3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .situation {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    border-top: 4px solid var(--color-primary);
+  }
+
+  .situation h3 {
+    font-size: var(--text-lg);
+  }
+
+  .situation p {
+    color: var(--color-ink-soft);
+  }
+
+  .service-card {
+    position: relative;
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    transition:
+      border-color 0.2s var(--ease),
+      box-shadow 0.2s var(--ease);
+  }
+
+  .service-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow);
+  }
+
+  .service-card:focus-within {
+    border-color: var(--color-primary);
+  }
+
+  .service-index {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-ink-muted);
+  }
+
+  .service-card h3 {
+    font-size: var(--text-2xl);
+  }
+
+  .service-link {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  /* Ganze Karte klickbar, Link bleibt der einzige Fokuspunkt. */
+  .service-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+  }
+
+  .service-card > p {
+    color: var(--color-ink-soft);
+  }
+
+  .service-more {
+    font-weight: 600;
+    color: var(--color-link);
+  }
+
+  .principles-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 60em) {
+    .principles-grid {
+      grid-template-columns: 1fr 1.1fr;
+      gap: var(--space-8);
+    }
+    .sticky-head {
+      position: sticky;
+      top: 7rem;
+      align-self: start;
+    }
+  }
+
+  .principles {
+    list-style: none;
+    padding: 0;
+    display: grid;
+  }
+
+  .principles li {
+    display: grid;
+    gap: var(--space-2);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .principles li:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .principles h3 {
+    font-size: var(--text-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .principles h3::before {
+    content: '';
+    width: 0.75rem;
+    height: 0.75rem;
+    background: var(--color-mint);
+    outline: 1px solid rgb(14 11 36 / 0.2);
+    flex: none;
+  }
+
+  .principles p {
+    color: var(--color-ink-soft);
+  }
+
+  .ref-client {
+    color: var(--color-ink-muted);
+    font-size: var(--text-sm);
+  }
+
+  .more-faq {
+    margin-top: var(--space-5);
+  }
+</style>

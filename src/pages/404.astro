@@ -1,0 +1,36 @@
+---
+/**
+ * Statische 404-Seite. Ein statischer Host liefert nur eine 404-Datei aus, daher enthält sie
+ * die kurze Meldung in allen drei Sprachen (jeweils mit eigenem lang-Attribut).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getMessages, locales, localeMeta, routePath } from '../i18n';
+---
+
+<BaseLayout locale="de" routeKey="home" title="404" description="404" standaloneTitle>
+  <section class="section">
+    <div class="container prose">
+      <h1>404</h1>
+      {locales.map((l) => {
+        const m = getMessages(l);
+        return (
+          <div lang={localeMeta[l].htmlLang} class="nf">
+            <h2>{m.notFound.title}</h2>
+            <p>{m.notFound.text}</p>
+            <p>
+              <a class="button button--secondary" href={routePath('home', l)}>
+                {m.notFound.home} ({localeMeta[l].label})
+              </a>
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    padding-top: var(--space-4);
+  }
+</style>

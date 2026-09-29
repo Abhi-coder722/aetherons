@@ -1,0 +1,174 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import ContactForm from '../components/ContactForm.astro';
+import { site } from '../content/site';
+import { bookingUrls, formEndpoint } from '../lib/env';
+import { fmt, getMessages, routePath } from '../i18n';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const c = t.contact;
+const provider = site.contact.bookingProvider;
+const responseNote = site.contact.responseTimeNote[locale];
+const mailto = `mailto:${site.contact.email}?subject=${encodeURIComponent(t.form.mailSubject)}`;
+const bookingUrl = bookingUrls[locale];
+---
+
+<BaseLayout locale={locale} routeKey="contact" title={c.seo.title} description={c.seo.description}>
+  <PageHero eyebrow={c.eyebrow} title={c.h1} lead={c.lead} />
+
+  <section class="section" aria-label={c.eyebrow}>
+    <div class="container contact-grid">
+      <div class="contact-main">
+        {formEndpoint ? (
+          <>
+            <h2 class="form-heading">{t.form.heading}</h2>
+            <ContactForm locale={locale} endpoint={formEndpoint} />
+          </>
+        ) : (
+          <div class="card stack mail-only">
+            <h2 class="form-heading">{c.mailOnlyTitle}</h2>
+            <p>{c.mailOnlyText}</p>
+            <p>
+              <a class="button button--primary mail-button" href={mailto}>
+                {fmt(c.mailButton, { email: site.contact.email })}
+              </a>
+            </p>
+          </div>
+        )}
+      </div>
+
+      <aside class="contact-aside" aria-labelledby="aside-title">
+        <div class="card stack">
+          <h2 id="aside-title" class="aside-heading">
+            {c.asideHelpTitle}
+          </h2>
+          <ul class="check-list">
+            {c.asideHelp.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+          <p class="muted">{c.asideHelpNote}</p>
+        </div>
+
+        <div class="card stack">
+          <h2 class="aside-heading">{c.nextTitle}</h2>
+          <ol class="next-steps">
+            {c.next.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ol>
+          {responseNote && <p class="muted">{responseNote}</p>}
+        </div>
+
+        <div class="card stack">
+          <h2 class="aside-heading">{c.directTitle}</h2>
+          <p>
+            {c.email}: <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
+          </p>
+          {site.contact.phone && (
+            <p>
+              {c.phone}:{' '}
+              <a href={`tel:${site.contact.phone.replace(/[^+\d]/g, '')}`}>{site.contact.phone}</a>
+            </p>
+          )}
+        </div>
+
+        {bookingUrl && (
+          <div class="card stack booking" data-booking>
+            <h2 class="aside-heading">{c.booking}</h2>
+            <p class="disclosure" id="booking-disclosure">
+              {fmt(c.bookingDisclosure, { provider })}
+            </p>
+            <p>
+              <a
+                class="button button--secondary"
+                href={bookingUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+                aria-describedby="booking-disclosure"
+                data-booking-link
+              >
+                {c.booking}
+                <span class="visually-hidden"> ({fmt(c.bookingSr, { provider })})</span>
+                <span aria-hidden="true"> ↗</span>
+              </a>
+            </p>
+            <p class="muted small">
+              {fmt(c.bookingNote, { provider })}{' '}
+              <a href={`${routePath('privacy', locale)}#terminbuchung`}>
+                {fmt(c.bookingPolicy, { provider })}
+              </a>
+            </p>
+          </div>
+        )}
+      </aside>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact-grid {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  @media (min-width: 60em) {
+    .contact-grid {
+      grid-template-columns: 1.5fr 1fr;
+      align-items: start;
+    }
+  }
+
+  .form-heading {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-5);
+  }
+
+  .mail-only .form-heading {
+    margin-bottom: 0;
+  }
+
+  .mail-button {
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  .contact-aside {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .aside-heading {
+    font-size: var(--text-lg);
+  }
+
+  .next-steps {
+    padding-left: 1.25rem;
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .muted {
+    color: var(--color-ink-muted);
+    font-size: var(--text-sm);
+  }
+
+  .disclosure {
+    font-size: var(--text-sm);
+    color: var(--color-ink-soft);
+  }
+
+  .small {
+    font-size: var(--text-xs);
+  }
+
+  .contact-aside a {
+    overflow-wrap: anywhere;
+  }
+</style>

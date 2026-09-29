@@ -1,0 +1,125 @@
+---
+import '@fontsource-variable/sora/wght.css';
+import '@fontsource/ibm-plex-sans/latin-400.css';
+import '@fontsource/ibm-plex-sans/latin-ext-400.css';
+import '@fontsource/ibm-plex-sans/latin-600.css';
+import '@fontsource/ibm-plex-sans/latin-ext-600.css';
+import '@fontsource/ibm-plex-mono/latin-500.css';
+import '@fontsource/ibm-plex-mono/latin-ext-500.css';
+import '../styles/global.css';
+
+import soraLatin from '@fontsource-variable/sora/files/sora-latin-wght-normal.woff2?url';
+import plexLatin400 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url';
+
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import LangSuggest from '../components/LangSuggest.astro';
+import { site } from '../content/site';
+import { getMessages, localeMeta, type Locale, type RouteKey, routePath } from '../i18n';
+import {
+  alternates,
+  buildTitle,
+  graph,
+  isIndexable,
+  organizationSchema,
+  websiteSchema,
+} from '../lib/seo';
+
+interface Props {
+  locale: Locale;
+  routeKey: RouteKey;
+  /** Seitentitel ohne Markenzusatz (bzw. vollständig, wenn standaloneTitle gesetzt ist). */
+  title: string;
+  description: string;
+  standaloneTitle?: boolean;
+  /** Zusätzliche JSON-LD-Knoten (Organization und WebSite werden immer ergänzt). */
+  schema?: Record<string, unknown>[];
+  ogType?: 'website' | 'article';
+}
+
+const {
+  locale,
+  routeKey,
+  title,
+  description,
+  standaloneTitle = false,
+  schema = [],
+  ogType = 'website',
+} = Astro.props;
+
+const t = getMessages(locale);
+const meta = localeMeta[locale];
+const siteUrl = new URL('/', Astro.site).toString();
+const canonical = new URL(routePath(routeKey, locale), Astro.site).toString();
+const fullTitle = buildTitle(title, { standalone: standaloneTitle });
+const ogImage = new URL(`/og-image-${locale}.png`, Astro.site).toString();
+const indexable = isIndexable(routeKey);
+const alt = indexable ? alternates(routeKey, Astro.site!) : [];
+const jsonLd = graph([
+  organizationSchema(siteUrl, t.home.seo.description),
+  websiteSchema(siteUrl, locale),
+  ...schema,
+]);
+---
+
+<!doctype html>
+<html lang={meta.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {!indexable && <meta name="robots" content="noindex, follow" />}
+    {alt.map((item) => (
+      <link rel="alternate" hreflang={item.hreflang} href={item.href} />
+    ))}
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={meta.og} />
+    {indexable &&
+      (['de', 'tr', 'en'] as const)
+        .filter((l) => l !== locale)
+        .map((l) => <meta property="og:locale:alternate" content={localeMeta[l].og} />)}
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`aetheron – ${t.ui.footer.tagline}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0b0720" />
+
+    <link rel="preload" href={soraLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={plexLatin400} as="font" type="font/woff2" crossorigin />
+
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+    <script type="application/ld+json" set:html={jsonLd} />
+  </head>
+  <body>
+    <a class="skip-link" href="#inhalt">
+      {t.ui.skip}
+    </a>
+    <SiteHeader locale={locale} routeKey={routeKey} />
+    <LangSuggest locale={locale} routeKey={routeKey} />
+    <main id="inhalt" tabindex="-1">
+      <slot />
+    </main>
+    <SiteFooter locale={locale} />
+  </body>
+</html>
+
+<style>
+  main:focus {
+    outline: none;
+  }
+</style>

@@ -1,0 +1,66 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  lead?: string;
+}
+const { eyebrow, title, lead } = Astro.props;
+---
+
+<section class="page-hero on-night">
+  <div class="container page-hero-inner">
+    <slot name="before" />
+    <p class="eyebrow">{eyebrow}</p>
+    <h1>{title}</h1>
+    {lead && <p class="lead">{lead}</p>}
+    <slot />
+  </div>
+  <svg class="page-hero-path" viewBox="0 0 400 120" aria-hidden="true" focusable="false">
+    <path d="M0 30 H250 Q280 30 280 60 V74 Q280 90 296 90 H352" />
+    <rect x="352" y="72" width="36" height="36" />
+  </svg>
+</section>
+
+<style>
+  .page-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(3rem, 2rem + 5vw, 6rem);
+  }
+
+  .page-hero-inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+
+  .page-hero-inner h1 {
+    max-width: 18ch;
+  }
+
+  .page-hero-path {
+    position: absolute;
+    right: var(--gutter);
+    bottom: 1.5rem;
+    width: min(38vw, 26rem);
+    opacity: 0.9;
+  }
+
+  .page-hero-path path {
+    fill: none;
+    stroke: var(--logo-blue);
+    stroke-width: 10;
+  }
+
+  .page-hero-path rect {
+    fill: var(--logo-mint);
+  }
+
+  @media (max-width: 47.99em) {
+    .page-hero-path {
+      display: none;
+    }
+  }
+</style>

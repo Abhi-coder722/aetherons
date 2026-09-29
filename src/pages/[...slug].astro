@@ -1,0 +1,38 @@
+---
+import HomeView from '../views/HomeView.astro';
+import ServiceView from '../views/ServiceView.astro';
+import ProcessView from '../views/ProcessView.astro';
+import AboutView from '../views/AboutView.astro';
+import FaqView from '../views/FaqView.astro';
+import ContactView from '../views/ContactView.astro';
+import ImprintView from '../views/ImprintView.astro';
+import PrivacyView from '../views/PrivacyView.astro';
+import { allRoutes, defaultLocale, slugs, type Locale, type RouteKey } from '../i18n';
+
+/** Eine Datei erzeugt alle Seiten in allen Sprachen aus dem Routenregister (src/i18n/routes.ts). */
+export function getStaticPaths() {
+  return allRoutes().map(({ key, locale }) => {
+    const slug = slugs[key][locale];
+    const prefix = locale === defaultLocale ? '' : locale;
+    const path = [prefix, slug].filter(Boolean).join('/');
+    return { params: { slug: path || undefined }, props: { key, locale } };
+  });
+}
+
+interface Props {
+  key: RouteKey;
+  locale: Locale;
+}
+const { key, locale } = Astro.props;
+---
+
+{key === 'home' && <HomeView locale={locale} />}
+{(key === 'webdev' || key === 'shops' || key === 'pos' || key === 'data') && (
+  <ServiceView locale={locale} serviceKey={key} />
+)}
+{key === 'process' && <ProcessView locale={locale} />}
+{key === 'about' && <AboutView locale={locale} />}
+{key === 'faq' && <FaqView locale={locale} />}
+{key === 'contact' && <ContactView locale={locale} />}
+{key === 'legal' && <ImprintView locale={locale} />}
+{key === 'privacy' && <PrivacyView locale={locale} />}

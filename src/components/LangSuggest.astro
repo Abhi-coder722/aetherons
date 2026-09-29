@@ -1,0 +1,125 @@
+---
+/**
+ * Optionaler Sprachhinweis: Erscheint nur, wenn die Browsersprache eine andere unserer Sprachen
+ * nahelegt und jemand die Seite frisch aufruft (nicht beim Navigieren innerhalb der Seite).
+ * Kein automatischer Redirect, nichts wird gespeichert, der Hinweis lässt sich schließen.
+ */
+import { getMessages, localeMeta, locales, routePath } from '../i18n';
+import type { Locale, RouteKey } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  routeKey: RouteKey;
+}
+const { locale, routeKey } = Astro.props;
+
+const options = Object.fromEntries(
+  locales
+    .filter((l) => l !== locale)
+    .map((l) => {
+      const m = getMessages(l);
+      return [
+        l,
+        {
+          lang: localeMeta[l].htmlLang,
+          text: m.ui.suggest.text,
+          action: m.ui.suggest.action,
+          dismiss: m.ui.suggest.dismiss,
+          href: routePath(routeKey, l),
+        },
+      ];
+    }),
+);
+---
+
+<div
+  class="lang-suggest"
+  role="region"
+  aria-label="Language / Sprache / Dil"
+  data-lang-suggest
+  hidden
+>
+  <div class="container lang-suggest-inner">
+    <p data-suggest-text></p>
+    <a class="button button--secondary" data-suggest-link href="#"></a>
+    <button class="suggest-close" type="button" data-suggest-close>
+      <span aria-hidden="true">×</span>
+      <span class="visually-hidden" data-suggest-dismiss></span>
+    </button>
+  </div>
+  <script type="application/json" data-suggest-options set:html={JSON.stringify(options)} />
+  <script type="application/json" data-suggest-current set:html={JSON.stringify(locale)} />
+</div>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-lang-suggest]');
+  if (root) {
+    const options = JSON.parse(root.querySelector('[data-suggest-options]')!.textContent || '{}');
+    const preferred = (navigator.languages?.length ? navigator.languages : [navigator.language])
+      .map((l) => (l || '').slice(0, 2).toLowerCase())
+      .find((l) => l in options || l === 'de' || l === 'tr' || l === 'en');
+    const current = JSON.parse(root.querySelector('[data-suggest-current]')!.textContent || '""');
+
+    const fromSameSite = (() => {
+      try {
+        return !!document.referrer && new URL(document.referrer).origin === location.origin;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (preferred && preferred !== current && options[preferred] && !fromSameSite) {
+      const o = options[preferred];
+      const text = root.querySelector<HTMLElement>('[data-suggest-text]')!;
+      const link = root.querySelector<HTMLAnchorElement>('[data-suggest-link]')!;
+      text.textContent = o.text;
+      text.lang = o.lang;
+      link.textContent = o.action;
+      link.lang = o.lang;
+      link.hreflang = o.lang;
+      link.href = o.href;
+      const dismiss = root.querySelector<HTMLElement>('[data-suggest-dismiss]')!;
+      dismiss.textContent = o.dismiss;
+      dismiss.lang = o.lang;
+      root.hidden = false;
+      root.querySelector('[data-suggest-close]')!.addEventListener('click', () => {
+        root.hidden = true;
+      });
+    }
+  }
+</script>
+
+<style>
+  .lang-suggest {
+    background: var(--color-tint);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .lang-suggest-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+  }
+
+  .lang-suggest p {
+    margin-right: auto;
+  }
+
+  .lang-suggest .button {
+    min-height: 2.75rem;
+    padding-block: 0.4rem;
+  }
+
+  .suggest-close {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    border: 0;
+    background: transparent;
+    font-size: 1.5rem;
+    color: var(--color-ink);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+  }
+</style>
