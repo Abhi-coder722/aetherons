@@ -1,5 +1,4 @@
 ---
-import { site } from '../content/site';
 import { LIMITS, TOPICS } from '../lib/validation';
 import { getMessages, routePath } from '../i18n';
 import type { Locale } from '../i18n';
@@ -11,11 +10,8 @@ interface Props {
 const { locale, endpoint } = Astro.props;
 const t = getMessages(locale);
 const f = t.form;
-
-const endpointUrl = new URL(endpoint, Astro.url);
-const ownEndpoint = endpointUrl.pathname === '/api/inquiry';
-// Honeypot-Feldname passend zum Ziel (FormSubmit: _honey, Formspree: _gotcha, eigener Server: hp).
-const honeypotName = ownEndpoint ? 'hp' : endpoint.includes('formspree') ? '_gotcha' : '_honey';
+const successUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
+successUrl.searchParams.set('sent', '1');
 
 const clientMessages = {
   errors: f.errors,
@@ -27,14 +23,11 @@ const clientMessages = {
   },
   statusSending: f.statusSending,
   statusBlocked: f.statusBlocked,
+  statusFailed: f.failureTitle,
+  statusSuccess: f.successTitle,
   submit: f.submit,
   submitting: f.submitting,
-  mailSubject: f.mailSubject,
-  mailLabels: f.mailLabels,
-  topics: Object.fromEntries(TOPICS.map((k) => [k, f.topics[k].label])),
   messageHint: f.messageHint,
-  mail: site.contact.email,
-  sameOrigin: ownEndpoint,
 };
 ---
 
@@ -256,10 +249,13 @@ const clientMessages = {
 
     <div class="honeypot" aria-hidden="true">
       <label for="hp-field">{f.honeypot}</label>
-      <input id="hp-field" type="text" name={honeypotName} tabindex="-1" autocomplete="off" />
+      <input id="hp-field" type="text" name="_honey" tabindex="-1" autocomplete="off" />
     </div>
     <input type="hidden" name="locale" value={locale} />
-    {!ownEndpoint && <input type="hidden" name="_subject" value="aetheron – Website-Anfrage" />}
+    <input type="hidden" name="_subject" value="aetheron – Website-Anfrage" />
+    <input type="hidden" name="_template" value="table" />
+    <input type="hidden" name="_captcha" value="false" />
+    <input type="hidden" name="_next" value={successUrl.toString()} />
 
     <div class="form-actions">
       <button class="button button--primary" type="submit" data-submit>
@@ -277,12 +273,7 @@ const clientMessages = {
     <div class="form-status" role="status" aria-live="polite" data-status></div>
   </form>
 
-  <div class="form-result form-result--success" data-success hidden tabindex="-1">
-    <h2>{f.successTitle}</h2>
-    <p>
-      {f.successText} <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>.
-    </p>
-  </div>
+  <iframe name="contact-submit-result" title="" data-submit-frame hidden></iframe>
 
   <div class="form-result form-result--error" data-failure hidden tabindex="-1">
     <h2>{f.failureTitle}</h2>
@@ -301,7 +292,6 @@ const clientMessages = {
   import {
     validateInquiry,
     normalizeInquiry,
-    isSuccessfulSubmission,
     errorMax,
     TOPICS,
     type InquiryField,
@@ -320,11 +310,7 @@ const clientMessages = {
     const status = form.querySelector<HTMLElement>('[data-status]')!;
     const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
     const submitLabel = form.querySelector<HTMLElement>('[data-submit-label]')!;
-    const success = root.querySelector<HTMLElement>('[data-success]')!;
-    const failure = root.querySelector<HTMLElement>('[data-failure]')!;
-    const failureTitle = failure.querySelector('h2')!;
-    const failureText = failure.querySelector('p')!;
-    const mailFallback = root.querySelector<HTMLAnchorElement>('[data-mail-fallback]')!;
+    const submitFrame = root.querySelector<HTMLIFrameElement>('[data-submit-frame]')!;
     const hint = form.querySelector<HTMLElement>('[data-message-hint]')!;
     const groups = Array.from(form.querySelectorAll<HTMLElement>('[data-topic-group]'));
     const fieldNames: InquiryField[] = [
@@ -401,50 +387,46 @@ const clientMessages = {
       });
     });
 
-    const buildMailto = () => {
-      const d = read();
-      const L = i18n.mailLabels as Record<string, string>;
-      const lines = [d.message, ''];
-      const add = (label: string, value: string) => value && lines.push(`${label}: ${value}`);
-      add(L.topic, i18n.topics[d.topic]);
-      add(L.name, d.name);
-      add(L.company, d.company);
-      if (d.topic === 'website') add(L.url, d.url);
-      if (d.topic === 'shop') add(L.context, d.shopContext);
-      if (d.topic === 'pos') {
-        add(L.provider, d.posProvider);
-        add(L.model, d.posModel);
-        add(L.version, d.posVersion);
-      }
-      if (d.topic === 'data') add(L.tools, d.dataTools);
-      return `mailto:${i18n.mail}?subject=${encodeURIComponent(i18n.mailSubject)}&body=${encodeURIComponent(lines.join('\n'))}`;
-    };
-
     const setBusy = (busy: boolean) => {
       submit.disabled = busy;
       form.setAttribute('aria-busy', String(busy));
       submitLabel.textContent = busy ? i18n.submitting : i18n.submit;
     };
 
-    const fail = (title?: string, text?: string) => {
-      status.textContent = '';
-      if (title) failureTitle.textContent = title;
-      if (text) failureText.textContent = text;
-      mailFallback.href = buildMailto();
-      failure.hidden = false;
-      failure.focus();
-    };
+    let submissionPending = false;
+    form.target = submitFrame.name;
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      failure.hidden = true;
+    submitFrame.addEventListener('load', () => {
+      if (!submissionPending) return;
 
+      let delivered = false;
+      try {
+        const resultUrl = new URL(submitFrame.contentWindow?.location.href ?? '');
+        delivered =
+          resultUrl.origin === location.origin && resultUrl.searchParams.get('sent') === '1';
+      } catch {
+        // A FormSubmit error page remains cross-origin; only our _next page proves delivery.
+      }
+
+      submissionPending = false;
+      setBusy(false);
+      status.dataset.state = delivered ? 'success' : 'error';
+      status.textContent = delivered ? i18n.statusSuccess : i18n.statusFailed;
+
+      if (delivered) {
+        form.reset();
+        applyTopic('unsure');
+      }
+    });
+
+    form.addEventListener('submit', (event) => {
       const input = read();
       const errors = validateInquiry(input);
       fieldNames.forEach((field) => showFieldError(field, errors[field]));
       const invalid = fieldNames.filter((field) => errors[field]);
 
       if (invalid.length > 0) {
+        event.preventDefault();
         summaryList.replaceChildren(
           ...invalid.map((field) => {
             const li = document.createElement('li');
@@ -468,51 +450,15 @@ const clientMessages = {
       // Honeypot ausgefüllt: vermutlich automatisiert – nicht senden, keinen Erfolg vortäuschen.
       const honeypot = form.querySelector<HTMLInputElement>('#hp-field');
       if (honeypot && honeypot.value) {
+        event.preventDefault();
         status.textContent = i18n.statusBlocked;
         return;
       }
 
       setBusy(true);
+      status.dataset.state = 'sending';
       status.textContent = i18n.statusSending;
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 15000);
-
-      try {
-        const init: RequestInit = { method: 'POST', signal: controller.signal };
-        if (i18n.sameOrigin) {
-          init.headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
-          init.body = JSON.stringify({ ...input, hp: honeypot?.value ?? '' });
-        } else {
-          init.headers = { Accept: 'application/json' };
-          init.body = new FormData(form);
-        }
-        const response = await fetch(form.action, init);
-        let body: unknown = null;
-        try {
-          body = await response.json();
-        } catch {
-          body = null;
-        }
-        if (
-          response.status === 503 &&
-          (body as { error?: string } | null)?.error === 'not_configured'
-        ) {
-          fail(undefined, undefined);
-          return;
-        }
-        if (!isSuccessfulSubmission(response.status, body)) throw new Error('not-accepted');
-
-        form.reset();
-        form.hidden = true;
-        status.textContent = '';
-        success.hidden = false;
-        success.focus();
-      } catch {
-        fail();
-      } finally {
-        window.clearTimeout(timeout);
-        setBusy(false);
-      }
+      submissionPending = true;
     });
   }
 </script>
@@ -708,6 +654,14 @@ const clientMessages = {
     font-weight: 600;
   }
 
+  .form-status[data-state='success'] {
+    color: var(--color-success);
+  }
+
+  .form-status[data-state='error'] {
+    color: var(--color-error);
+  }
+
   .error-summary,
   .form-result {
     padding: var(--space-5);
@@ -746,11 +700,6 @@ const clientMessages = {
 
   .form-result h2 {
     font-size: var(--text-xl);
-  }
-
-  .form-result--success {
-    background: var(--color-success-bg);
-    border-color: var(--color-success);
   }
 
   .form-result--error {

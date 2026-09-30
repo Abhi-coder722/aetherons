@@ -9,8 +9,8 @@ Unternehmen in Deutschland. Sprachen: Deutsch (Standard), Türkisch, Englisch �
 
 ## Stack
 
-Astro 7 (statisch, TypeScript strict) · Vitest · Playwright + axe · ESLint/Prettier · optionaler Node-Server (`server/`)
-für Formular-Zustellung und Auslieferung mit Sicherheits-Headern. Node ≥ 22.18 (`.nvmrc` = 22).
+Astro 7 (statisch, TypeScript strict) · Vitest · Playwright + axe · ESLint/Prettier. Das Kontaktformular sendet
+per HTTPS an FormSubmit. Node ≥ 22.18 (`.nvmrc` = 22).
 
 ## Schnellstart
 
@@ -19,7 +19,7 @@ npm ci
 cp .env.example .env      # Werte anpassen (siehe unten)
 npm run dev               # http://localhost:4321
 npm run verify            # lint + check + Unit-Tests + Build + E2E
-npm run build && npm run serve   # Produktions-Build über den mitgelieferten Server
+npm run build             # statischer Produktions-Build in dist/
 ```
 
 ## Struktur
@@ -31,9 +31,8 @@ npm run build && npm run serve   # Produktions-Build über den mitgelieferten Se
 | `src/views/`                | Seitenansichten (Home, Leistungen, Ablauf, Über uns, FAQ, Kontakt, Impressum, Datenschutz)                         |
 | `src/components/`           | Header/Footer, Sprachumschalter, Sprachhinweis, Kontaktformular, Platzhalter-Darstellung                           |
 | `src/content/site.ts`       | Kontakt- und Rechtsangaben; `ph('key')` markiert Platzhalter                                                       |
-| `src/lib/`                  | `validation.ts` (client + server geteilt), `env.ts`, `seo.ts`                                                      |
-| `server/`                   | Optionaler Server: `/api/inquiry`, `/healthz`, statische Auslieferung mit `dist/_headers`                          |
-| `tests/unit`, `tests/e2e`   | Vitest (54) und Playwright (Desktop + Mobil, statisch + Server)                                                    |
+| `src/lib/`                  | `validation.ts`, `env.ts`, `seo.ts`                                                                                |
+| `tests/unit`, `tests/e2e`   | Vitest und Playwright (Desktop + Mobil)                                                                            |
 | `scripts/check-launch.mjs`  | Launch-Gate (Platzhalter, Entwurfshinweise, fehlende Konfiguration)                                                |
 
 ## Mehrsprachigkeit
@@ -49,20 +48,15 @@ npm run build && npm run serve   # Produktions-Build über den mitgelieferten Se
 Ort: `/kontakt/` (tr `/tr/iletisim/`, en `/en/contact/`), jede CTA verlinkt dorthin (mit `?topic=…`).
 Themen: Website, Online-Shop, POS-Anbindung, Daten/Digitalisierung, Unsicher. Optionale themenabhängige Felder
 (u. a. POS-Anbieter/Modell/Version). Pflicht: Name, E-Mail, Nachricht – keine Telefonnummer, kein Konto.
-Validierung clientseitig (Fehlerübersicht, Fokus) **und serverseitig**; Erfolg wird nur bei bestätigter Zustellung gezeigt.
+Validierung erfolgt clientseitig mit Fehlerübersicht und Fokussteuerung. Der normale FormSubmit-POST läuft in
+einem unsichtbaren Ziel-Frame. Erst die lokalisierte `_next`-Rückleitung bestätigt die Zustellung; die aktuelle
+Seite bleibt stehen und zeigt eine kurze Erfolgsmeldung unter dem Formular.
 
-`PUBLIC_FORM_ENDPOINT` (Build-Zeit):
-
-| Wert           | Verhalten                                                                                                               |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `/api/inquiry` | Eigener Server (`npm run serve`): Origin-Prüfung, Honeypot, Rate-Limit, SMTP-Zustellung, 503 `not_configured` ohne SMTP |
-| `https://…`    | Externer Formular-Dienst (multipart POST); `form-action` in `public/_headers` anpassen                                  |
-| leer           | Kein Formular; stattdessen E-Mail-Kontakt (mailto)                                                                      |
-
-Die aktuelle Konfiguration verwendet `/api/inquiry` und Zoho Mail EU. `npm run dev` stellt den Endpunkt lokal bereit;
-für den Produktivbetrieb zuerst `npm run build` und danach `npm run serve` starten. Benötigt werden `SMTP_HOST`,
-`SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` und `SMTP_PASS` (oder alternativ `SMTP_URL`). Geheimnisse gehören nur in `.env`
-bzw. die Secret-Verwaltung des Hosters. Rein statisches Hosting kann `/api/inquiry` nicht ausführen.
+Der FormSubmit-Endpunkt `https://formsubmit.co/kontakt@aetherons.de` ist fest in `src/lib/env.ts` konfiguriert,
+damit Hosting-Variablen ihn nicht versehentlich überschreiben. Die Adresse muss bei FormSubmit bestaetigt sein.
+`_honey` dient als unsichtbares Bot-Feld; `_captcha=false` vermeidet eine zusaetzliche
+FormSubmit-Zwischenseite. `_next` fuehrt nach erfolgreicher Zustellung unsichtbar zur lokalen Kontaktseite zurueck.
+Cloudflare braucht dafuer keine API-Funktion und keine Mail-Secrets.
 
 ## Terminbuchung (Calendly)
 
@@ -79,21 +73,23 @@ Cal.com wird nicht mehr verwendet.
 ## Datenschutz & Sicherheit
 
 Keine Cookies, kein Tracking, keine externen Fonts/Skripte (Schriften self-hosted). CSP, HSTS, `nosniff`,
-`frame-ancestors 'none'` etc. in `public/_headers` (Netlify/Cloudflare), `public/.htaccess` (Apache) und über den
-mitgelieferten Server. Logs enthalten keine personenbezogenen Daten. Es gibt keine Geheimnisse im Repository.
+`frame-ancestors 'none'` etc. in `public/_headers` (Netlify/Cloudflare) und `public/.htaccess` (Apache).
+Es gibt keine Geheimnisse im Repository.
 
 ## Tests
 
-`npm test` – 54 Unit-/Serverhandler-Tests (Katalog-Parität, Platzhalter, Validierung, SEO, Server).
-`npm run test:e2e` – baut zwei Varianten und prüft alle 33 Seiten × 3 Sprachen auf Desktop und Mobil (Pixel 7):
+`npm test` prueft Katalog-Paritaet, Platzhalter, Validierung und SEO.
+`npm run test:e2e` prueft alle Seiten in drei Sprachen auf Desktop und Mobil (Pixel 7):
 Metadaten/hreflang/JSON-LD, axe (WCAG 2.2 AA), Überlauf, Links/Anker, Sitemap/robots, Sprachumschalter, Menü, Sprachhinweis,
-Formular (Fehler, Erfolg, Fehlschlag, Netzwerkfehler, POS, Honeypot, ohne JS), Calendly-Hinweis, Server-Roundtrip.
+Formular (Fehler, Erfolg, Fehlschlag, Netzwerkfehler, POS, Honeypot, ohne JS) und Calendly-Hinweis.
 Lokal mit vorinstalliertem Chromium: `PLAYWRIGHT_CHROMIUM_PATH=/pfad/zu/chrome npm run test:e2e`.
 
 ## Deployment
 
 Siehe `LAUNCH-CHECKLIST.md`. Kurz: (1) `.env` bzw. Hosting-Variablen setzen, (2) `npm run build`,
-(3) `npm run check:launch` muss grün sein, (4) `dist/` statisch hosten **oder** `npm run serve` hinter TLS-Proxy betreiben,
+(3) `npm run check:launch` muss grün sein, (4) `dist/` statisch hosten,
 (5) manuelle Abnahme (Checkliste), (6) Search Console: `sitemap.xml` einreichen.
+
 # aetherons
+
 # aetherons

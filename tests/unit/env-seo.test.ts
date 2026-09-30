@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBookingUrl, parseBookingUrls, parseFormEndpoint } from '../../src/lib/env';
+import { parseBookingUrl, parseBookingUrls } from '../../src/lib/env';
 import {
   breadcrumbSchema,
   buildTitle,
@@ -46,18 +46,6 @@ describe('parseBookingUrls (Calendly je Sprache)', () => {
       tr: 'https://calendly.com/aetheron/en',
       en: 'https://calendly.com/aetheron/en',
     });
-  });
-});
-
-describe('parseFormEndpoint', () => {
-  it('erlaubt relative Pfade und https, aber kein http und keine protokollrelativen URLs', () => {
-    expect(parseFormEndpoint('/api/inquiry')).toBe('/api/inquiry');
-    expect(parseFormEndpoint('https://formspree.io/f/abc')).toBe('https://formspree.io/f/abc');
-    expect(parseFormEndpoint('https://formsubmit.co/ajax/kontakt@example.de')).toBe(
-      'https://formsubmit.co/ajax/kontakt@example.de',
-    );
-    for (const bad of ['', 'http://x.de/f', '//evil.test/f', 'javascript:1', 'not a url'])
-      expect(parseFormEndpoint(bad), bad).toBe('');
   });
 });
 

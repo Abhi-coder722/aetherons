@@ -1,14 +1,11 @@
-# Sicherheits-Header. Werden von Netlify/Cloudflare Pages und vom mitgelieferten Server (server/) gelesen.
-#
-# Formular an einen EXTERNEN Dienst (PUBLIC_FORM_ENDPOINT=https://…)? Dann dessen Domain in
-# connect-src und form-action ergänzen, z. B. https://formsubmit.co, und in public/.htaccess ebenso.
+# Sicherheits-Header fuer statisches Hosting auf Cloudflare Pages/Netlify.
 # Die Terminbuchung (Calendly) ist nur ein Link und braucht keinen CSP-Eintrag.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self' https://formsubmit.co; frame-src 'self' https://formsubmit.co; frame-ancestors 'self'; base-uri 'self'; object-src 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
-  X-Frame-Options: DENY
+  X-Frame-Options: SAMEORIGIN
   Strict-Transport-Security: max-age=31536000
 
 /_astro/*

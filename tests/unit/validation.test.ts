@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   LIMITS,
-  isSuccessfulSubmission,
   isValidEmail,
   isValidUrl,
   normalizeInquiry,
@@ -91,18 +90,5 @@ describe('validateInquiry', () => {
   it('isValidUrl lehnt fremde Schemata ab', () => {
     expect(isValidUrl('ftp://x.de/a')).toBe(false);
     expect(isValidUrl('data:text/html,x')).toBe(false);
-  });
-});
-
-describe('isSuccessfulSubmission', () => {
-  it('wertet nur 2xx ohne Fehlersignal als Erfolg', () => {
-    expect(isSuccessfulSubmission(200, { success: 'true' })).toBe(true);
-    expect(isSuccessfulSubmission(204, null)).toBe(true);
-    expect(isSuccessfulSubmission(200, { success: 'false' })).toBe(false);
-    expect(isSuccessfulSubmission(200, { ok: false })).toBe(false);
-    expect(isSuccessfulSubmission(200, { error: 'x' })).toBe(false);
-    expect(isSuccessfulSubmission(200, { errors: [{ message: 'x' }] })).toBe(false);
-    expect(isSuccessfulSubmission(500, {})).toBe(false);
-    expect(isSuccessfulSubmission(302, null)).toBe(false);
   });
 });

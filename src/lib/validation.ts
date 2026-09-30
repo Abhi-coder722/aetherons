@@ -1,7 +1,6 @@
 /**
  * Validierung der Projektanfrage. Dieselbe Datei läuft im Browser (Nutzerhilfe) und im
- * eigenen Server unter server/ (maßgebliche Prüfung). Sie hat bewusst keine Importe,
- * damit Node sie direkt laden kann.
+ * Browser. Sie hat bewusst keine Importe und bleibt dadurch leicht testbar.
  */
 
 export const TOPICS = ['website', 'shop', 'pos', 'data', 'unsure'] as const;
@@ -129,21 +128,4 @@ export function validateInquiry(input: InquiryInput): InquiryErrors {
     if (input[field].length > LIMITS.detail) errors[field] = 'detailTooLong';
   }
   return errors;
-}
-
-/**
- * Wertet die Antwort eines externen Formular-Dienstes aus. Erfolg nur bei HTTP 2xx und –
- * falls JSON geliefert wird – ohne ausdrückliches Fehlersignal.
- */
-export function isSuccessfulSubmission(status: number, body: unknown): boolean {
-  if (status < 200 || status >= 300) return false;
-  if (body && typeof body === 'object') {
-    const record = body as Record<string, unknown>;
-    if (record.success === false || record.success === 'false') return false;
-    if (record.ok === false) return false;
-    if ('error' in record && record.error) return false;
-    if ('errors' in record && Array.isArray(record.errors) && record.errors.length > 0)
-      return false;
-  }
-  return true;
 }

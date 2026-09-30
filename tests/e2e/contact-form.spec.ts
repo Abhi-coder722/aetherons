@@ -1,12 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import { getMessages, routePath, type Locale } from '../../src/i18n';
 
-const ENDPOINT = 'https://forms.example.test/submit';
+const ENDPOINT = 'https://formsubmit.co/kontakt@aetherons.de';
 const locales: Locale[] = ['de', 'tr', 'en'];
 const bookingHref: Record<Locale, string> = {
-  de: 'https://calendly.com/example-test/de-30min',
-  tr: 'https://calendly.com/example-test/en-30min',
-  en: 'https://calendly.com/example-test/en-30min',
+  de: 'https://calendly.com/kontakt-aetherons/30-minute-meeting-clone',
+  tr: 'https://calendly.com/kontakt-aetherons/30min',
+  en: 'https://calendly.com/kontakt-aetherons/30min',
 };
 
 async function fillValid(page: Page, locale: Locale) {
@@ -53,61 +53,32 @@ for (const locale of locales) {
       await expect(page.locator('#email-error')).toHaveText(f.errors.emailInvalid);
     });
 
-    test('zeigt Erfolg nur nach bestätigter Übermittlung und sendet die Angaben', async ({
+    test('bleibt nach erfolgreicher Zustellung auf der Seite und zeigt eine kurze Meldung', async ({
       page,
+      baseURL,
     }) => {
       let body = '';
       await page.route(ENDPOINT, async (route) => {
         body = route.request().postData() ?? '';
         await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: '{"success":"true"}',
+          status: 302,
+          headers: { Location: new URL(`${path}?sent=1`, baseURL).toString() },
         });
       });
       await page.goto(path);
+      const originalUrl = page.url();
       await fillValid(page, locale);
       await page.getByRole('button', { name: f.submit }).click();
 
-      const success = page.locator('[data-success]');
-      await expect(success).toBeVisible();
-      await expect(success).toBeFocused();
-      await expect(success).toContainText(f.successTitle);
-      expect(body).toContain('erika@example.de');
-      expect(body).toContain(`name="locale"\r\n\r\n${locale}`);
-      await expect(page.locator('[data-contact-form]')).toBeHidden();
-    });
-
-    test('zeigt Fehler mit E-Mail-Alternative, wenn der Dienst ablehnt, und behält die Eingaben', async ({
-      page,
-    }) => {
-      await page.route(ENDPOINT, (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: '{"success":"false"}',
-        }),
-      );
-      await page.goto(path);
-      await fillValid(page, locale);
-      await page.getByRole('button', { name: f.submit }).click();
-      const failure = page.locator('[data-failure]');
-      await expect(failure).toBeVisible();
-      await expect(failure).toContainText(f.failureTitle);
-      await expect(page.locator('[data-success]')).toBeHidden();
-      await expect(page.locator('#email')).toHaveValue('erika@example.de');
-      const href = await page.locator('[data-mail-fallback]').getAttribute('href');
-      expect(href).toMatch(/^mailto:kontakt@aetherons\.de\?subject=/);
-      expect(decodeURIComponent(href!)).toContain('Erika Mustermann');
-    });
-
-    test('behandelt Netzwerkfehler wie einen Fehler, nicht als Erfolg', async ({ page }) => {
-      await page.route(ENDPOINT, (route) => route.abort());
-      await page.goto(path);
-      await fillValid(page, locale);
-      await page.getByRole('button', { name: f.submit }).click();
-      await expect(page.locator('[data-failure]')).toBeVisible();
-      await expect(page.locator('[data-success]')).toBeHidden();
+      await expect(page.locator('[data-status]')).toHaveText(f.successTitle);
+      await expect(page.locator('[data-status]')).toHaveAttribute('data-state', 'success');
+      expect(page.url()).toBe(originalUrl);
+      const submitted = new URLSearchParams(body);
+      expect(submitted.get('email')).toBe('erika@example.de');
+      expect(submitted.get('locale')).toBe(locale);
+      expect(submitted.get('_next')).toContain(`${path}?sent=1`);
+      await expect(page.locator('[data-contact-form]')).toBeVisible();
+      await expect(page.locator('#name')).toHaveValue('');
     });
 
     test('Thema aus der URL wählt die Radiogruppe und blendet POS-Felder ein', async ({ page }) => {
@@ -122,14 +93,13 @@ for (const locale of locales) {
       await expect(page.locator('[data-topic-group="pos"]')).toBeHidden();
     });
 
-    test('sendet POS-Angaben mit und keine Telefonnummer-Pflicht', async ({ page }) => {
+    test('sendet POS-Angaben mit und keine Telefonnummer-Pflicht', async ({ page, baseURL }) => {
       let body = '';
       await page.route(ENDPOINT, async (route) => {
         body = route.request().postData() ?? '';
         await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: '{"success":"true"}',
+          status: 302,
+          headers: { Location: new URL(`${path}?sent=1`, baseURL).toString() },
         });
       });
       await page.goto(`${path}?topic=pos`);
@@ -137,10 +107,11 @@ for (const locale of locales) {
       await page.locator('#posProvider').fill('Beispiel-POS');
       await page.locator('#posVersion').fill('4.2');
       await page.getByRole('button', { name: f.submit }).click();
-      await expect(page.locator('[data-success]')).toBeVisible();
-      expect(body).toContain('Beispiel-POS');
-      expect(body).toContain('4.2');
-      expect(body).toContain('name="topic"\r\n\r\npos');
+      await expect(page.locator('[data-status]')).toHaveText(f.successTitle);
+      const submitted = new URLSearchParams(body);
+      expect(submitted.get('posProvider')).toBe('Beispiel-POS');
+      expect(submitted.get('posVersion')).toBe('4.2');
+      expect(submitted.get('topic')).toBe('pos');
       await expect(page.locator('input[type="tel"]')).toHaveCount(0);
     });
 
@@ -173,7 +144,8 @@ for (const locale of locales) {
         'href',
         new RegExp(`${routePath('privacy', locale)}#terminbuchung`),
       );
-      await expect(page.locator('iframe')).toHaveCount(0);
+      await expect(page.locator('iframe:not([data-submit-frame])')).toHaveCount(0);
+      await expect(page.locator('[data-submit-frame]')).toBeHidden();
     });
 
     test('Datenschutz enthält den Calendly-Abschnitt, wenn ein Link konfiguriert ist', async ({
@@ -197,5 +169,6 @@ test('ohne JavaScript bleiben alle optionalen Felder erreichbar und das Formular
   await expect(page.locator('[data-topic-group="website"]')).toBeVisible();
   await expect(page.locator('form[data-contact-form]')).toHaveAttribute('action', ENDPOINT);
   await expect(page.locator('form[data-contact-form]')).toHaveAttribute('method', 'post');
+  await expect(page.locator('form[data-contact-form]')).not.toHaveAttribute('target');
   await context.close();
 });

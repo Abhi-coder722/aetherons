@@ -45,8 +45,6 @@ try {
 
 if (!process.env.PUBLIC_SITE_URL)
   problems.push('PUBLIC_SITE_URL ist nicht gesetzt (Canonicals/Sitemap nutzen den Platzhalter).');
-if (!process.env.PUBLIC_FORM_ENDPOINT)
-  warnings.push('PUBLIC_FORM_ENDPOINT ist leer: Die Kontaktseite zeigt nur einen E-Mail-Button.');
 if (
   !process.env.PUBLIC_CALENDLY_URL &&
   !process.env.PUBLIC_CALENDLY_URL_DE &&

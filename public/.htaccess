@@ -1,6 +1,5 @@
 # Für Apache-Hosting (z. B. viele deutsche Shared-Hoster). Wird bei anderen Servern ignoriert.
-# Hinweis: Ein statischer Webspace hat keinen Server für /api/inquiry. Dann PUBLIC_FORM_ENDPOINT auf
-# einen externen Formular-Dienst setzen oder leer lassen (E-Mail-Kontakt) – siehe README.
+# Das Kontaktformular sendet per HTTPS an FormSubmit.
 ErrorDocument 404 /404.html
 
 <IfModule mod_rewrite.c>
@@ -15,10 +14,10 @@ ErrorDocument 404 /404.html
 </IfModule>
 
 <IfModule mod_headers.c>
-  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self' https://formsubmit.co; frame-src 'self' https://formsubmit.co; frame-ancestors 'self'; base-uri 'self'; object-src 'none'"
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
-  Header always set X-Frame-Options "DENY"
+  Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Strict-Transport-Security "max-age=31536000"
   <FilesMatch "\.(woff2?|css|js)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
